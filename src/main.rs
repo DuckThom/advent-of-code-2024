@@ -1,8 +1,9 @@
 use std::env;
+use std::process::exit;
 
-mod utils;
 mod day_1;
 mod day_2;
+mod utils;
 
 #[derive(Debug, PartialEq)]
 enum MethodType {
@@ -21,23 +22,26 @@ fn main() {
         .map(|s| match s.as_str() {
             "execute" => MethodType::EXECUTE,
             "validate" => MethodType::VALIDATE,
-            _ => panic!(
-                "Unknown method: {}. Valid arguments: 'execute' (default), 'validate'",
-                args[1].as_str()
-            ),
+            _ => {
+                eprintln!(
+                    "Unknown method: {}. Valid arguments: 'execute' (default), 'validate'",
+                    args[1].as_str()
+                );
+
+                exit(1);
+            }
         })
         .unwrap_or(MethodType::EXECUTE);
 
-    let day: usize = args.get(2).map(|s| s.parse().unwrap()).unwrap_or(0);
+    let day: usize = args
+        .get(2)
+        .map(|s| s.parse::<i32>().unwrap().clamp(0, 31) as usize)
+        .unwrap_or(0);
 
-    let list_to_use: Vec<fn()> = match method {
-        MethodType::EXECUTE => execute_days,
-        MethodType::VALIDATE => validate_days,
+    let list_to_use: &Vec<fn()> = match method {
+        MethodType::EXECUTE => &execute_days,
+        MethodType::VALIDATE => &validate_days,
     };
-
-    if day > list_to_use.len() {
-        panic!("Day {} is not implemented", day);
-    }
 
     if day == 0 {
         for i in 1..=2 {
@@ -48,6 +52,12 @@ fn main() {
             }
         }
     } else {
+        if day > list_to_use.len() {
+            eprintln!("Day {} is not implemented", day);
+
+            exit(1)
+        }
+
         let took = utils::time_it(list_to_use[day - 1]);
 
         if method == MethodType::EXECUTE {
@@ -55,5 +65,3 @@ fn main() {
         }
     }
 }
-
-
