@@ -1,37 +1,59 @@
 use std::env;
 
-mod days;
+mod utils;
+mod day_1;
+mod day_2;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum MethodType {
     EXECUTE,
     VALIDATE,
 }
 
 fn main() {
+    let execute_days: Vec<fn()> = vec![day_1::execute, day_2::execute];
+    let validate_days: Vec<fn()> = vec![day_1::validate, day_2::validate];
+
     let args: Vec<String> = env::args().collect();
 
-    let method: MethodType = match args[1].as_str() {
-        "execute" => MethodType::EXECUTE,
-        "validate" => MethodType::VALIDATE,
-        _ => panic!("Unknown method: {}. Valid arguments: 'execute', 'validate'", args[1].as_str()),
-    };
-    let day: i8 = args[2].parse().unwrap();
+    let method: MethodType = args
+        .get(1)
+        .map(|s| match s.as_str() {
+            "execute" => MethodType::EXECUTE,
+            "validate" => MethodType::VALIDATE,
+            _ => panic!(
+                "Unknown method: {}. Valid arguments: 'execute' (default), 'validate'",
+                args[1].as_str()
+            ),
+        })
+        .unwrap_or(MethodType::EXECUTE);
 
-    match method {
-        MethodType::EXECUTE => {
-            match day {
-                1 => days::day_1::execute(),
-                2 => days::day_2::execute(),
-                _ => panic!("Day not implemented: {}", day),
+    let day: usize = args.get(2).map(|s| s.parse().unwrap()).unwrap_or(0);
+
+    let list_to_use: Vec<fn()> = match method {
+        MethodType::EXECUTE => execute_days,
+        MethodType::VALIDATE => validate_days,
+    };
+
+    if day > list_to_use.len() {
+        panic!("Day {} is not implemented", day);
+    }
+
+    if day == 0 {
+        for i in 1..=2 {
+            let took = utils::time_it(list_to_use[i - 1]);
+
+            if method == MethodType::EXECUTE {
+                utils::print_duration(took, i);
             }
         }
-        MethodType::VALIDATE => {
-            match day {
-                1 => days::day_1::validate(),
-                2 => days::day_2::validate(),
-                _ => panic!("Day not implemented: {}", day),
-            }
+    } else {
+        let took = utils::time_it(list_to_use[day - 1]);
+
+        if method == MethodType::EXECUTE {
+            utils::print_duration(took, day);
         }
     }
 }
+
+
