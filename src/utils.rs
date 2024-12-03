@@ -17,6 +17,7 @@ pub fn time_it<F: Fn()>(f: F) -> Duration {
 pub fn print_duration(duration: Duration, day: usize) {
     let ms = duration.as_millis();
 
+    // When the code is too fast, switch to nanoseconds!
     if ms == 0 {
         let ns = duration.as_nanos();
 

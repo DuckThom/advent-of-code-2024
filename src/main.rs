@@ -3,6 +3,7 @@ use std::process::exit;
 
 mod day_1;
 mod day_2;
+mod day_3;
 mod utils;
 
 #[derive(Debug, PartialEq)]
@@ -12,8 +13,8 @@ enum MethodType {
 }
 
 fn main() {
-    let execute_days: Vec<fn()> = vec![day_1::execute, day_2::execute];
-    let validate_days: Vec<fn()> = vec![day_1::validate, day_2::validate];
+    let execute_days: Vec<fn()> = vec![day_1::execute, day_2::execute, day_3::execute];
+    let validate_days: Vec<fn()> = vec![day_1::validate, day_2::validate, day_3::validate];
 
     let args: Vec<String> = env::args().collect();
 
@@ -44,7 +45,7 @@ fn main() {
     };
 
     if day == 0 {
-        for i in 1..=2 {
+        for i in 1..=list_to_use.len() {
             let took = utils::time_it(list_to_use[i - 1]);
 
             if method == MethodType::EXECUTE {
