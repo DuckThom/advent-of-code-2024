@@ -1,4 +1,6 @@
 use crate::utils;
+use lazy_static::lazy_static;
+use regex::Regex;
 
 pub fn execute() {
     let input = include_str!("inputs/day_3/input");
@@ -21,37 +23,35 @@ pub fn validate() {
     println!("Valid!");
 }
 
+lazy_static! {
+    static ref REGEX_PART1: Regex = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap();
+    static ref REGEX_PART2: Regex =
+        Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don't\(\)").unwrap();
+}
+
 mod day_3 {
-    use regex::Regex;
+    use super::*;
 
     pub fn part1(input: &str) -> i32 {
-        let pattern = r"mul\((\d{1,3}),(\d{1,3})\)";
-        let re = Regex::new(pattern).unwrap();
-        let mut result: i32 = 0;
-
-        for cap in re.captures_iter(input) {
-            result += cap[1].parse::<i32>().unwrap() * cap[2].parse::<i32>().unwrap();
-        }
-
-        result
+        REGEX_PART1.captures_iter(input).fold(0, |acc, cap| {
+            acc + cap[1].parse::<i32>().unwrap() * cap[2].parse::<i32>().unwrap()
+        })
     }
 
     pub fn part2(input: &str) -> i32 {
-        let pattern = r"mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don't\(\)";
-        let re = Regex::new(pattern).unwrap();
-        let mut result: i32 = 0;
         let mut multiply = true;
 
-        for cap in re.captures_iter(input) {
-            if cap[0].to_string() == "do()" {
+        REGEX_PART2.captures_iter(input).fold(0, |acc, cap| {
+            if cap[0] == *"do()" {
                 multiply = true;
-            } else if cap[0].to_string() == "don't()" {
+            } else if cap[0] == *"don't()" {
                 multiply = false;
             } else if multiply && cap[0].starts_with("mul") {
-                result += cap[1].parse::<i32>().unwrap() * cap[2].parse::<i32>().unwrap();
+                return acc
+                    + cap[1].parse::<i32>().unwrap_or(0) * cap[2].parse::<i32>().unwrap_or(0);
             }
-        }
 
-        result
+            acc
+        })
     }
 }
