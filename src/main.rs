@@ -8,37 +8,43 @@ mod day_4;
 mod day_5;
 mod utils;
 
-fn main() {
-    let days: Vec<fn()> = vec![
-        day_1::execute,
-        day_2::execute,
-        day_3::execute,
-        day_4::execute,
-        day_5::execute,
-    ];
+const DAYS: [fn(); 5] = [
+    day_1::execute,
+    day_2::execute,
+    day_3::execute,
+    day_4::execute,
+    day_5::execute,
+];
 
+fn main() {
     let args: Vec<String> = env::args().collect();
 
     let day: usize = args
         .get(1)
-        .map(|s| s.parse::<i32>().unwrap().clamp(0, 31) as usize)
+        .map(|s| s.parse::<usize>().unwrap().clamp(0, DAYS.len()))
         .unwrap_or(0);
 
     if day == 0 {
-        for i in 1..=days.len() {
-            let took = utils::time_it(days[i - 1]);
-
-            utils::print_duration(took, i);
-        }
+        run_all_days()
     } else {
-        if day > days.len() {
-            eprintln!("Day {} is not implemented", day);
-
-            exit(1)
-        }
-
-        let took = utils::time_it(days[day - 1]);
-
-        utils::print_duration(took, day);
+        run_day(day)
     }
+}
+
+fn run_all_days() {
+    for day in 1..=DAYS.len() {
+        run_day(day)
+    }
+}
+
+fn run_day(day: usize) {
+    if day > DAYS.len() {
+        eprintln!("Day {} is not implemented", day);
+
+        exit(1)
+    }
+
+    let took = utils::time_it(DAYS[day - 1]);
+
+    utils::print_duration(took, day);
 }
