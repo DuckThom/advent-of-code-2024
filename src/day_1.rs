@@ -1,68 +1,72 @@
 use crate::utils;
 
-pub fn execute() {
-    let input = include_str!("inputs/day_1/input");
+const INPUT: &str = include_str!("inputs/day_1/input");
 
+pub fn execute() {
     utils::print_day_banner(1);
 
-    println!("Part 1: {}", day_1::part1(input));
-    println!("Part 2: {}", day_1::part2(input));
+    println!("Part 1: {}", part1(INPUT));
+    println!("Part 2: {}", part2(INPUT));
 }
 
-pub fn validate() {
-    let test = include_str!("inputs/day_1/test");
+fn part1(input: &str) -> i32 {
+    let (left_side, right_side) = get_sorted_list(input);
 
-    print!("Validating day 1... ");
+    let mut result: i32 = 0;
 
-    assert_eq!(day_1::part1(test), 11);
-    assert_eq!(day_1::part2(test), 31);
+    for i in 0..(left_side.len()) {
+        result += (left_side.get(i).unwrap() - right_side.get(i).unwrap()).abs();
+    }
 
-    println!("Valid!");
+    result
 }
 
-mod day_1 {
-    pub fn part1(input: &str) -> i32 {
-        let (left_side, right_side) = get_sorted_list(input);
+fn part2(input: &str) -> i32 {
+    let (left_side, right_side) = get_sorted_list(input);
 
-        let mut result: i32 = 0;
+    let mut result: i32 = 0;
 
-        for i in 0..(left_side.len()) {
-            result += (left_side.get(i).unwrap() - right_side.get(i).unwrap()).abs();
-        }
+    for i in 0..left_side.len() {
+        let number_to_find = left_side.get(i).unwrap();
 
-        result
+        let records_found = right_side.iter().filter(|&x| x == number_to_find).count();
+
+        result += number_to_find * records_found as i32;
     }
 
-    pub fn part2(input: &str) -> i32 {
-        let (left_side, right_side) = get_sorted_list(input);
+    result
+}
 
-        let mut result: i32 = 0;
+fn get_sorted_list(input: &str) -> (Vec<i32>, Vec<i32>) {
+    let mut left_side: Vec<i32> = Vec::new();
+    let mut right_side: Vec<i32> = Vec::new();
 
-        for i in 0..left_side.len() {
-            let number_to_find = left_side.get(i).unwrap();
+    for line in input.lines() {
+        let (left, right) = line.split_once("   ").unwrap();
 
-            let records_found = right_side.iter().filter(|&x| x == number_to_find).count();
-
-            result += number_to_find * records_found as i32;
-        }
-
-        result
+        left_side.push(left.parse::<i32>().unwrap());
+        right_side.push(right.parse::<i32>().unwrap());
     }
 
-    fn get_sorted_list(input: &str) -> (Vec<i32>, Vec<i32>) {
-        let mut left_side: Vec<i32> = Vec::new();
-        let mut right_side: Vec<i32> = Vec::new();
+    left_side.sort();
+    right_side.sort();
 
-        for line in input.lines() {
-            let (left, right) = line.split_once("   ").unwrap();
+    (left_side, right_side)
+}
 
-            left_side.push(left.parse::<i32>().unwrap());
-            right_side.push(right.parse::<i32>().unwrap());
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        left_side.sort();
-        right_side.sort();
+    const TEST_INPUT: &str = include_str!("inputs/day_1/test");
 
-        (left_side, right_side)
+    #[test]
+    fn test_part1() {
+        assert_eq!(part1(TEST_INPUT), 11);
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(part2(TEST_INPUT), 31);
     }
 }
