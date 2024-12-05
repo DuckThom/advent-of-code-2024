@@ -5,6 +5,7 @@ mod day_1;
 mod day_2;
 mod day_3;
 mod day_4;
+mod day_5;
 mod utils;
 
 #[derive(Debug, PartialEq)]
@@ -19,6 +20,7 @@ fn main() {
         day_2::validate,
         day_3::validate,
         day_4::validate,
+        day_5::validate,
     ];
 
     let execute_days: Vec<fn()> = vec![
@@ -26,6 +28,7 @@ fn main() {
         day_2::execute,
         day_3::execute,
         day_4::execute,
+        day_5::execute,
     ];
 
     let args: Vec<String> = env::args().collect();
