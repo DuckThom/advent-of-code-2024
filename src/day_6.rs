@@ -1,6 +1,9 @@
 use crate::utils;
 
 use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::thread::JoinHandle;
 
 const INPUT: &str = include_str!("inputs/day_6/input");
 
@@ -52,23 +55,34 @@ fn part2(input: &str) -> i32 {
     let start_position: (usize, usize) = find_start_position(&matrix).unwrap();
     let walls: HashSet<(usize, usize)> = find_walls(&matrix);
     let path: HashSet<(usize, usize)> = get_unique_guard_locations(&matrix);
-    let mut count: i32 = 0;
 
-    for location in path {
-        let mut new_walls: HashSet<(usize, usize)> = walls.clone();
+    let count = Arc::new(Mutex::new(0));
 
-        new_walls.insert(location);
+    let handles: Vec<JoinHandle<()>> = path
+        .into_iter()
+        .map(|location| {
+            let mut new_walls: HashSet<(usize, usize)> = walls.clone();
+            new_walls.insert(location);
 
-        if is_infinite_loop(
-            start_position,
-            &new_walls,
-            &matrix
-        ) {
-            count += 1
-        }
+            let thread_matrix = matrix.clone();
+            let thread_count = Arc::clone(&count);
+
+            thread::spawn(move || {
+                if is_infinite_loop(start_position, &new_walls, &thread_matrix) {
+                    let mut num = thread_count.lock().unwrap();
+                    *num += 1;
+                }
+            })
+        })
+        .collect();
+
+    // Wait for threads to complete
+    for handle in handles {
+        handle.join().unwrap();
     }
 
-    count
+    let x = *count.lock().unwrap();
+    x
 }
 
 fn is_out_of_bounds((x, y): (usize, usize), matrix: &Vec<Vec<char>>) -> bool {
@@ -135,7 +149,7 @@ fn get_unique_guard_locations(matrix: &Vec<Vec<char>>) -> HashSet<(usize, usize)
 fn is_infinite_loop(
     start_position: (usize, usize),
     walls: &HashSet<(usize, usize)>,
-    matrix: &Vec<Vec<char>>
+    matrix: &Vec<Vec<char>>,
 ) -> bool {
     let mut position = start_position.clone();
     let mut direction: Direction = Direction::Up;
