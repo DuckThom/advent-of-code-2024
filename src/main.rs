@@ -6,14 +6,16 @@ mod day_2;
 mod day_3;
 mod day_4;
 mod day_5;
+mod day_6;
 mod utils;
 
-const DAYS: [fn(); 5] = [
+const DAYS: [fn(); 6] = [
     day_1::execute,
     day_2::execute,
     day_3::execute,
     day_4::execute,
     day_5::execute,
+    day_6::execute,
 ];
 
 fn main() {
