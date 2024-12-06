@@ -1,12 +1,12 @@
 use crate::utils;
 
-const INPUT: &str = include_str!("inputs/day_2/input");
-
 pub fn execute() {
+    let input: String = utils::read_input_file(2);
+
     utils::print_day_banner(2);
 
-    println!("Part 1: {}", part1(INPUT));
-    println!("Part 2: {}", part2(INPUT));
+    println!("Part 1: {}", part1(&input));
+    println!("Part 2: {}", part2(&input));
 }
 
 fn part1(input: &str) -> usize {
@@ -76,7 +76,7 @@ fn try_is_safe(items: &Vec<i32>) -> bool {
 mod tests {
     use super::*;
 
-    const TEST_INPUT: &str = include_str!("inputs/day_2/test");
+    const TEST_INPUT: &str = include_str!("../inputs/day_2/test");
 
     #[test]
     fn test_part1() {

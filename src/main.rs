@@ -1,5 +1,7 @@
-use std::env;
+use std::{env, fs};
 use std::process::exit;
+use crate::utils::download_input;
+use tokio;
 
 mod day_1;
 mod day_2;
@@ -18,7 +20,8 @@ const DAYS: [fn(); 6] = [
     day_6::execute,
 ];
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().collect();
 
     let day: usize = args
@@ -27,23 +30,27 @@ fn main() {
         .unwrap_or(0);
 
     if day == 0 {
-        run_all_days()
+        run_all_days().await
     } else {
-        run_day(day)
+        run_day(day).await
     }
 }
 
-fn run_all_days() {
+async fn run_all_days() {
     for day in 1..=DAYS.len() {
-        run_day(day)
+        run_day(day).await
     }
 }
 
-fn run_day(day: usize) {
+async fn run_day(day: usize) {
     if day > DAYS.len() {
         eprintln!("Day {} is not implemented", day);
 
         exit(1)
+    }
+
+    if !fs::exists(format!("inputs/day_{}/input", day)).unwrap_or(false) {
+        download_input(day).await;
     }
 
     let took = utils::time_it(DAYS[day - 1]);

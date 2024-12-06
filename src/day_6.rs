@@ -5,13 +5,13 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 
-const INPUT: &str = include_str!("inputs/day_6/input");
-
 pub fn execute() {
+    let input: String = utils::read_input_file(6);
+
     utils::print_day_banner(6);
 
-    println!("Part 1: {}", part1(INPUT));
-    println!("Part 2: {}", part2(INPUT));
+    println!("Part 1: {}", part1(&input));
+    println!("Part 2: {}", part2(&input));
 }
 
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
@@ -184,7 +184,7 @@ fn is_infinite_loop(
 mod tests {
     use super::*;
 
-    const TEST_INPUT: &str = include_str!("inputs/day_6/test");
+    const TEST_INPUT: &str = include_str!("../inputs/day_6/test");
 
     #[test]
     pub fn test_part1() {

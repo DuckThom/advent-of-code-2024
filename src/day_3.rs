@@ -2,13 +2,13 @@ use crate::utils;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-const INPUT: &str = include_str!("inputs/day_3/input");
-
 pub fn execute() {
+    let input: String = utils::read_input_file(3);
+
     utils::print_day_banner(3);
 
-    println!("Part 1: {}", part1(INPUT));
-    println!("Part 2: {}", part2(INPUT));
+    println!("Part 1: {}", part1(&input));
+    println!("Part 2: {}", part2(&input));
 }
 
 lazy_static! {
@@ -43,8 +43,8 @@ fn part2(input: &str) -> i32 {
 mod tests {
     use super::*;
 
-    const TEST_INPUT: &str = include_str!("inputs/day_3/test");
-    const TEST_INPUT2: &str = include_str!("inputs/day_3/test2");
+    const TEST_INPUT: &str = include_str!("../inputs/day_3/test");
+    const TEST_INPUT2: &str = include_str!("../inputs/day_3/test2");
 
     #[test]
     pub fn test_part1() {

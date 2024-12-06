@@ -2,13 +2,13 @@ use crate::utils;
 
 use std::collections::HashMap;
 
-const INPUT: &str = include_str!("inputs/day_5/input");
-
 pub fn execute() {
+    let input: String = utils::read_input_file(5);
+
     utils::print_day_banner(5);
 
-    println!("Part 1: {}", part1(INPUT));
-    println!("Part 2: {}", part2(INPUT));
+    println!("Part 1: {}", part1(&input));
+    println!("Part 2: {}", part2(&input));
 }
 
 fn part1(input: &str) -> i32 {
@@ -112,7 +112,7 @@ fn fix_order(order: &Vec<i32>, pages: &HashMap<i32, Vec<i32>>) -> Vec<i32> {
 mod tests {
     use super::*;
 
-    const TEST_INPUT: &str = include_str!("inputs/day_5/test");
+    const TEST_INPUT: &str = include_str!("../inputs/day_5/test");
 
     #[test]
     pub fn test_part1() {

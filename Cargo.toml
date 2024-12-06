@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+tokio = { version = "1", features = ["full"] }
 regex = "1"
 lazy_static = "1"
+reqwest = "0.12"

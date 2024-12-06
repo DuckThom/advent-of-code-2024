@@ -1,12 +1,12 @@
 use crate::utils;
 
-const INPUT: &str = include_str!("inputs/day_4/input");
-
 pub fn execute() {
+    let input: String = utils::read_input_file(4);
+
     utils::print_day_banner(4);
 
-    println!("Part 1: {}", part1(INPUT));
-    println!("Part 2: {}", part2(INPUT));
+    println!("Part 1: {}", part1(&input));
+    println!("Part 2: {}", part2(&input));
 }
 
 fn part1(input: &str) -> i32 {
@@ -216,7 +216,7 @@ fn is_xmas(buffer: &Vec<char>) -> bool {
 mod tests {
     use super::*;
 
-    const TEST_INPUT: &str = include_str!("inputs/day_4/test");
+    const TEST_INPUT: &str = include_str!("../inputs/day_4/test");
 
     #[test]
     fn test_part1() {

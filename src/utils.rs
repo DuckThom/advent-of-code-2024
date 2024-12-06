@@ -1,3 +1,6 @@
+use std::env;
+use std::fs::File;
+use std::io::Read;
 use std::time::Duration;
 
 pub fn print_day_banner(day: usize) {
@@ -21,16 +24,52 @@ pub fn print_duration(duration: Duration, day: usize) {
     if ms == 0 {
         let ns = duration.as_nanos();
 
-        println!(
-            "Day {} took {}ns\n",
-            day,
-            ns
-        );
+        println!("Day {} took {}ns\n", day, ns);
     } else {
-        println!(
-            "Day {} took {}ms\n",
-            day,
-            ms
-        );
+        println!("Day {} took {}ms\n", day, ms);
     }
+}
+
+pub async fn download_input(day: usize) {
+    use std::io::Write;
+
+    let url = format!("https://adventofcode.com/2024/day/{}/input", day);
+
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .header("User-Agent", "advent-of-code-helper")
+        .header(
+            "Cookie",
+            format!(
+                "session={}",
+                env::var("AOC_SESSION")
+                    .expect("env var AOC_SESSION not set, cannot auto-download input")
+            ),
+        )
+        .send()
+        .await
+        .expect("Failed to send request");
+
+    if response.status().is_success() {
+        let data = response.text().await.expect("Failed to read response");
+
+        let mut file =
+            File::create(format!("inputs/day_{}/input", day)).expect("Failed to create input file");
+
+        write!(file, "{}", data).expect("Could not write to file");
+    } else {
+        panic!("Failed to download input: {}", response.status());
+    }
+}
+
+pub fn read_input_file(day: usize) -> String {
+    let file_path = format!("inputs/day_{}/input", day);
+    let mut file = File::open(&file_path).expect("Input file not found");
+    let mut data = String::new();
+
+    file.read_to_string(&mut data)
+        .expect(format!("Failed to read input file: {}", &file_path).as_str());
+
+    data
 }
