@@ -25,6 +25,10 @@ pub fn print_duration(duration: Duration, day: usize) {
         let ns = duration.as_nanos();
 
         println!("Day {} took {}ns\n", day, ns);
+    } else if ms > 10_000 {
+        let s = duration.as_secs();
+
+        println!("Day {} took {}s\n", day, s);
     } else {
         println!("Day {} took {}ms\n", day, ms);
     }
