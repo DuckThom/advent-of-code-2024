@@ -61,7 +61,7 @@ pub async fn download_input(day: usize) {
         let mut file =
             File::create(format!("inputs/day_{}/input", day)).expect("Failed to create input file");
 
-        write!(file, "{}", data).expect("Could not write to file");
+        write!(file, "{}", data.trim_end()).expect("Could not write to file");
     } else {
         panic!("Failed to download input: {}", response.status());
     }
@@ -76,4 +76,19 @@ pub fn read_input_file(day: usize) -> String {
         .expect(format!("Failed to read input file: {}", &file_path).as_str());
 
     data
+}
+
+pub fn input_to_char_matrix(input: &str) -> Vec<Vec<char>> {
+    input.lines().map(|line| line.chars().collect()).collect()
+}
+
+pub fn input_to_usize_matrix(input: &str) -> Vec<Vec<usize>> {
+    input
+        .lines()
+        .map(|l| {
+            l.chars()
+                .filter_map(|c| c.to_digit(10).map(|d| d as usize))
+                .collect()
+        })
+        .collect()
 }

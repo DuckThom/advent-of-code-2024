@@ -14,7 +14,7 @@ fn part1(input: &str) -> i32 {
 
     let mut result: i32 = 0;
 
-    for i in 0..(left_side.len()) {
+    for i in 0..left_side.len() {
         result += (left_side.get(i).unwrap() - right_side.get(i).unwrap()).abs();
     }
 

@@ -44,13 +44,13 @@ impl Direction {
 }
 
 fn part1(input: &str) -> usize {
-    let matrix = parse_input(input);
+    let matrix = utils::input_to_char_matrix(input);
 
     get_unique_guard_locations(&matrix).len()
 }
 
 fn part2(input: &str) -> i32 {
-    let matrix = parse_input(input);
+    let matrix = utils::input_to_char_matrix(input);
 
     let start_position: (usize, usize) = find_start_position(&matrix).unwrap();
     let walls: HashSet<(usize, usize)> = find_walls(&matrix);
@@ -87,10 +87,6 @@ fn part2(input: &str) -> i32 {
 
 fn is_out_of_bounds((x, y): (usize, usize), matrix: &Vec<Vec<char>>) -> bool {
     y >= matrix.len() || x >= matrix[y].len()
-}
-
-fn parse_input(input: &str) -> Vec<Vec<char>> {
-    input.lines().map(|line| line.chars().collect()).collect()
 }
 
 fn find_start_position(matrix: &Vec<Vec<char>>) -> Result<(usize, usize), &str> {

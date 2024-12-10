@@ -1,4 +1,3 @@
-// use std::str::FromStr;
 use crate::utils;
 
 pub fn execute() {
@@ -11,28 +10,17 @@ pub fn execute() {
 }
 
 fn part1(input: &str) -> i32 {
-    let matrix = parse_input(input);
+    let matrix = utils::input_to_usize_matrix(input);
     let start_points = get_start_points(&matrix);
 
     do_something(&matrix, start_points, true)
 }
 
 fn part2(input: &str) -> i32 {
-    let matrix = parse_input(input);
+    let matrix = utils::input_to_usize_matrix(input);
     let start_points = get_start_points(&matrix);
 
     do_something(&matrix, start_points, false)
-}
-
-fn parse_input(input: &str) -> Vec<Vec<usize>> {
-    input
-        .lines()
-        .map(|l| {
-            l.chars()
-                .filter_map(|c| c.to_digit(10).map(|d| d as usize))
-                .collect()
-        })
-        .collect()
 }
 
 fn get_start_points(matrix: &Vec<Vec<usize>>) -> Vec<(usize, usize)> {

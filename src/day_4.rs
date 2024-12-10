@@ -10,7 +10,7 @@ pub fn execute() {
 }
 
 fn part1(input: &str) -> i32 {
-    let matrix: Vec<Vec<char>> = input.lines().map(|l| l.chars().collect()).collect();
+    let matrix = utils::input_to_char_matrix(input);
 
     get_start_locations(&matrix, 'X')
         .iter()
@@ -18,7 +18,7 @@ fn part1(input: &str) -> i32 {
 }
 
 fn part2(input: &str) -> usize {
-    let matrix: Vec<Vec<char>> = input.lines().map(|l| l.chars().collect()).collect();
+    let matrix = utils::input_to_char_matrix(input);
 
     get_start_locations(&matrix, 'A')
         .iter()

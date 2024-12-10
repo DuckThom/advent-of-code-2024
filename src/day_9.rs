@@ -1,16 +1,20 @@
+use crate::utils;
+use crossterm::{cursor::Hide, cursor::MoveTo, QueueableCommand};
+use std::io::{stdout, Write};
 use std::str::FromStr;
 use std::vec;
-use crate::utils;
 
 pub fn execute() {
     let input: String = utils::read_input_file(9);
 
     utils::print_day_banner(9);
 
-    println!("Part 1: {}", part1(&input));
-    println!("Part 2: {}", part2(&input));
-}
+    // println!("Part 1: {}", part1(&input));
+    // println!("Part 2: {}", part2(&input));
 
+    part2(&input);
+}
+#[allow(dead_code)]
 fn part1(input: &str) -> usize {
     let blocks = parse_input(input);
     let fragmented_blocks = fragment(&blocks);
@@ -32,7 +36,11 @@ fn parse_input(input: &str) -> Vec<Option<usize>> {
     let mut id = 0;
 
     for i in (0..bytes.len()).step_by(2) {
-        let end = if i + 2 <= bytes.len() { i + 2 } else { bytes.len() };
+        let end = if i + 2 <= bytes.len() {
+            i + 2
+        } else {
+            bytes.len()
+        };
         let chunk = &input[i..end].split_at(1);
 
         if !chunk.0.is_empty() {
@@ -53,6 +61,7 @@ fn parse_input(input: &str) -> Vec<Option<usize>> {
     disk
 }
 
+#[allow(dead_code)]
 fn fragment(disk: &Vec<Option<usize>>) -> Vec<Option<usize>> {
     let mut new_disk: Vec<Option<usize>> = disk.clone();
     let mut pointer = 0;
@@ -82,10 +91,36 @@ fn fragment(disk: &Vec<Option<usize>>) -> Vec<Option<usize>> {
     new_disk.into_iter().collect()
 }
 
-fn move_chunk(buffer: &mut Vec<usize>, disk: &mut Vec<Option<usize>>, source: usize, target: usize) {
+fn move_chunk(
+    buffer: &mut Vec<usize>,
+    disk: &mut Vec<Option<usize>>,
+    source: usize,
+    target: usize,
+) {
     for i in 0..buffer.len() {
         disk.swap(source + i, target + i);
     }
+}
+
+fn print_progress(disk: &Vec<Option<usize>>) {
+    let mut out = stdout();
+    out.queue(Hide).unwrap();
+    out.queue(MoveTo(0, 0)).unwrap();
+
+    disk.chunks(10).for_each(|chunk| {
+        let nones: Vec<_> = chunk.into_iter().filter(|x| x.is_none()).collect();
+
+        if nones.len() == chunk.len() {
+            out.write(".".as_bytes()).unwrap();
+        } else if nones.len() > 0 {
+            out.write("#".as_bytes()).unwrap();
+        } else {
+            out.write("█".as_bytes()).unwrap();
+        }
+    });
+
+    out.write("\n".as_bytes()).unwrap();
+    out.flush().unwrap();
 }
 
 fn find_free_space(size: usize, disk: &Vec<Option<usize>>) -> Option<usize> {
@@ -114,12 +149,17 @@ fn find_free_space(size: usize, disk: &Vec<Option<usize>>) -> Option<usize> {
 fn defragment(disk: &Vec<Option<usize>>) -> Vec<Option<usize>> {
     let mut new_disk: Vec<Option<usize>> = disk.clone();
     let mut current_id = disk.iter().max().unwrap().unwrap();
+    let mut first_free_position = 0;
 
-    loop {
+    'outer: loop {
         let mut buffer_end: Option<usize> = None;
         let mut buffer: Vec<usize> = vec![];
 
         for i in (0..new_disk.len()).rev() {
+            if i < first_free_position {
+                break 'outer;
+            }
+
             let id = new_disk[i];
             if id.is_none() || current_id != id.unwrap() {
                 continue;
@@ -131,11 +171,7 @@ fn defragment(disk: &Vec<Option<usize>>) -> Vec<Option<usize>> {
                 buffer_end = Some(i);
             }
 
-            let next_char = if i == 0 {
-                None
-            } else {
-                new_disk[i-1]
-            };
+            let next_char = if i == 0 { None } else { new_disk[i - 1] };
 
             if buffer.len() > 0 && next_char.unwrap_or(current_id + 1) != current_id {
                 let free_start = find_free_space(buffer.len(), &new_disk);
@@ -151,7 +187,17 @@ fn defragment(disk: &Vec<Option<usize>>) -> Vec<Option<usize>> {
                     break;
                 }
 
-                move_chunk(&mut buffer, &mut new_disk, buffer_start, free_start.unwrap());
+                move_chunk(
+                    &mut buffer,
+                    &mut new_disk,
+                    buffer_start,
+                    free_start.unwrap(),
+                );
+
+                // Defragmentation ASMR (comment if you want to see the real puzzle output)
+                print_progress(&new_disk);
+
+                first_free_position = new_disk.iter().position(|x| x.is_none()).unwrap();
 
                 break;
             }

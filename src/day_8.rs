@@ -1,6 +1,5 @@
-use std::collections::{HashMap, HashSet};
-// use std::str::FromStr;
 use crate::utils;
+use std::collections::{HashMap, HashSet};
 
 pub fn execute() {
     let input: String = utils::read_input_file(8);
@@ -26,7 +25,7 @@ struct AntiNode {
 }
 
 fn part1(input: &str) -> usize {
-    let map = parse_input(&input);
+    let map = utils::input_to_char_matrix(&input);
 
     let nodes = get_node_locations(&map);
     let antinodes = calculate_antinodes(&map, &nodes, false);
@@ -37,7 +36,7 @@ fn part1(input: &str) -> usize {
 }
 
 fn part2(input: &str) -> usize {
-    let map = parse_input(&input);
+    let map = utils::input_to_char_matrix(&input);
 
     let nodes = get_node_locations(&map);
     let antinodes = calculate_antinodes(&map, &nodes, true);
@@ -63,10 +62,6 @@ fn print_map(map: &Vec<Vec<char>>, antinodes: &HashSet<AntiNode>) {
 
         print!("\n")
     });
-}
-
-fn parse_input(input: &str) -> Vec<Vec<char>> {
-    input.lines().map(|l| l.chars().collect()).collect()
 }
 
 fn get_node_locations(map: &Vec<Vec<char>>) -> HashMap<char, Vec<Node>> {
