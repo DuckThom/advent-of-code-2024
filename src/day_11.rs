@@ -22,22 +22,30 @@ fn part2(input: &str) -> usize {
     do_the_number_loop(&mut number_map, 75)
 }
 
+fn split_number(num: usize) -> (usize, usize) {
+    if num == 0 {
+        return (0, 0);
+    }
+
+    // Calculate the total number of digits
+    let num_digits = num.ilog10() as usize + 1;
+    let middle = num_digits / 2;
+    let divisor = 10_usize.pow(middle as u32);
+
+    (num / divisor, num % divisor)
+}
+
 fn do_the_number_loop(map: &mut HashMap<usize, usize>, blinks: usize) -> usize {
     for _ in 0..blinks {
         let blink_map: HashMap<usize, usize> = map.clone();
 
         blink_map.iter().for_each(|(key, count)| {
-            let item_as_string = key.to_string();
-
             if *key == 0 {
                 map.insert(1, *count + map.get(&1).unwrap_or(&0));
             } else if *key == 1 {
                 map.insert(2024, *count + map.get(&2024).unwrap_or(&0));
-            } else if item_as_string.len() % 2 == 0 {
-                let (left, right) = item_as_string.split_at(item_as_string.len() / 2);
-
-                let new_key1 = left.parse::<usize>().unwrap();
-                let new_key2 = right.parse::<usize>().unwrap();
+            } else if (key.ilog10() as usize + 1) % 2 == 0 {
+                let (new_key1, new_key2) = split_number(*key);
 
                 if new_key1 == new_key2 {
                     map.insert(new_key1, (*count * 2) + map.get(&new_key1).unwrap_or(&0));
