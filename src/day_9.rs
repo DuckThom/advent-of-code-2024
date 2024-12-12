@@ -1,18 +1,11 @@
-use crate::utils;
 use crossterm::{cursor::Hide, cursor::MoveTo, QueueableCommand};
 use std::io::{stdout, Write};
 use std::str::FromStr;
 use std::vec;
 
-pub fn execute() {
-    let input: String = utils::read_input_file(9);
-
-    utils::print_day_banner(9);
-
-    // println!("Part 1: {}", part1(&input));
-    // println!("Part 2: {}", part2(&input));
-
-    part2(&input);
+pub fn execute(input: &str) {
+    println!("Part 1: {}", part1(&input));
+    println!("Part 2: {}", part2(&input));
 }
 #[allow(dead_code)]
 fn part1(input: &str) -> usize {

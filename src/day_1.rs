@@ -1,10 +1,4 @@
-use crate::utils;
-
-pub fn execute() {
-    let input: String = utils::read_input_file(1);
-
-    utils::print_day_banner(1);
-
+pub fn execute(input: &str) {
     println!("Part 1: {}", part1(&input));
     println!("Part 2: {}", part2(&input));
 }

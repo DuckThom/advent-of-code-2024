@@ -1,12 +1,6 @@
-use crate::utils;
-
 use std::str::FromStr;
 
-pub fn execute() {
-    let input: String = utils::read_input_file(7);
-
-    utils::print_day_banner(7);
-
+pub fn execute(input: &str) {
     println!("Part 1: {}", part1(&input));
     println!("Part 2: {}", part2(&input));
 }

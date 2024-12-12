@@ -17,7 +17,7 @@ mod day_8;
 mod day_9;
 mod utils;
 
-const DAYS: [fn(); 12] = [
+const DAYS: [fn(&str); 12] = [
     day_1::execute,
     day_2::execute,
     day_3::execute,
@@ -65,7 +65,11 @@ async fn run_day(day: usize) {
         download_input(day).await;
     }
 
-    let took = utils::time_it(DAYS[day - 1]);
+    let input: String = utils::read_input_file(day);
+
+    utils::print_day_banner(day);
+
+    let took = utils::time_it(|| DAYS[day - 1](&input));
 
     utils::print_duration(took, day);
 }

@@ -1,15 +1,10 @@
 use crate::utils;
-
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 
-pub fn execute() {
-    let input: String = utils::read_input_file(6);
-
-    utils::print_day_banner(6);
-
+pub fn execute(input: &str) {
     println!("Part 1: {}", part1(&input));
     println!("Part 2: {}", part2(&input));
 }
