@@ -7,26 +7,22 @@ pub fn execute(input: &str) {
 }
 
 fn part1(input: &str) -> usize {
-    let plants = utils::input_to_char_matrix(input);
-    let groups = create_char_groups(&plants);
-
-    let plant_count = count_plants(&groups);
-    let fence_count = count_fences(&groups);
-
-    plant_count.iter().fold(0, |acc, (plant, count)| {
-        acc + count * fence_count.get(plant).unwrap_or(&0)
-    })
+    calculate_price(input, count_fences)
 }
 
 fn part2(input: &str) -> usize {
+    calculate_price(input, count_fence_edges)
+}
+
+fn calculate_price(input: &str, calculator: fn(&Vec<Vec<usize>>) -> HashMap<usize, usize>) -> usize {
     let plants = utils::input_to_char_matrix(input);
     let groups = create_char_groups(&plants);
 
     let plant_count = count_plants(&groups);
-    let fence_corner_count = count_fence_edges(&groups);
+    let fence_count = calculator(&groups);
 
     plant_count.iter().fold(0, |acc, (plant, count)| {
-        acc + count * fence_corner_count.get(plant).unwrap_or(&0)
+        acc + count * fence_count.get(plant).unwrap_or(&0)
     })
 }
 

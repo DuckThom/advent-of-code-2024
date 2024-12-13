@@ -7,6 +7,7 @@ mod day_1;
 mod day_10;
 mod day_11;
 mod day_12;
+mod day_13;
 mod day_2;
 mod day_3;
 mod day_4;
@@ -17,7 +18,7 @@ mod day_8;
 mod day_9;
 mod utils;
 
-const DAYS: [fn(&str); 12] = [
+const DAYS: [fn(&str); 13] = [
     day_1::execute,
     day_2::execute,
     day_3::execute,
@@ -30,6 +31,7 @@ const DAYS: [fn(&str); 12] = [
     day_10::execute,
     day_11::execute,
     day_12::execute,
+    day_13::execute,
 ];
 
 #[tokio::main]
