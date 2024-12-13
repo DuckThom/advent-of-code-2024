@@ -7,84 +7,86 @@ use regex::Regex;
 
 #[derive(PartialEq)]
 struct Button {
-    x: usize,
-    y: usize,
+    x: u64,
+    y: u64,
     cost: u8,
 }
 
 #[derive(PartialEq)]
 struct Target {
-    x: usize,
-    y: usize,
+    x: u64,
+    y: u64,
 }
 
 type Arcade = (Button, Button, Target);
 
-fn part1(input: &str) -> usize {
+fn part1(input: &str) -> u64 {
     let arcades = parse_input(input, 0);
 
     calculate(&arcades)
 }
 
-fn part2(input: &str) -> usize {
+fn part2(input: &str) -> u64 {
     let arcades = parse_input(input, 10000000000000);
 
     calculate(&arcades)
 }
 
-fn calculate(arcades: &Vec<Arcade>) -> usize {
+fn calculate(arcades: &Vec<Arcade>) -> u64 {
     arcades
         .iter()
-        .fold(0, |acc, arcade| {
+        .map(|arcade| {
             let button_a = &arcade.0;
             let button_b = &arcade.1;
             let target = &arcade.2;
 
-            // Iterate over possible n1 (presses for Button A)
-            for n1 in 0..=target.x / button_a.x {
-                // Calculate x distance remaining for Button B
-                let remaining_x = target.x as isize - (n1 * button_a.x) as isize;
+            // Coefficients for equations
+            let ax = button_a.x as i64;
+            let ay = button_a.y as i64;
+            let bx = button_b.x as i64;
+            let by = button_b.y as i64;
+            let px = target.x as i64;
+            let py = target.y as i64;
 
-                // Check if Button B can cover the remaining X distance
-                if remaining_x % button_b.x as isize != 0 {
-                    continue; // Skip this iteration if remaining_x is not divisible
-                }
+            // Calculate the denominator (common factor in both equations)
+            let denominator = by * ax - bx * ay;
 
-                let n2_x = remaining_x / button_b.x as isize;
-
-                // Similarly, calculate y movements and check consistency
-                let y_movement_a = n1 * button_a.y;
-                let remaining_y = target.y as isize - y_movement_a as isize;
-
-                if n2_x < 0 || remaining_y % button_b.y as isize != 0 {
-                    continue;
-                }
-
-                let n2_y = remaining_y / button_b.y as isize;
-
-                // If the derived n2_x and n2_y are not consistent, skip.
-                if n2_x != n2_y {
-                    continue;
-                }
-
-                let n2 = n2_x; // Both must be equal per our calculation
-
-                if n2 < 0 {
-                    continue; // Skip invalid values for n2
-                }
-
-                // Calculate the cost for this (n1, n2) configuration
-                let cost = (n1 as usize * button_a.cost as usize)
-                    + (n2 as usize * button_b.cost as usize);
-
-                return acc + cost;
+            if denominator == 0 {
+                return 0; // No solution possible if denominator is zero
             }
 
-            acc
+            // Compute `b` (Button B presses) using the primary equation
+            let b_num = py * ax - px * ay;
+            if b_num % denominator != 0 {
+                return 0; // `b` is not an integer, so no solution
+            }
+
+            let b = b_num / denominator;
+
+            if b < 0 {
+                return 0; // Invalid solution (presses can't be negative)
+            }
+
+            // Compute `a` (Button A presses) using the secondary equation
+            let a_num = px - b * bx;
+            if a_num % ax != 0 {
+                return 0; // `a` is not an integer, so no solution
+            }
+
+            let a = a_num / ax;
+
+            if a < 0 {
+                return 0; // Invalid solution (presses can't be negative)
+            }
+
+            // Calculate the total cost for this solution
+            let cost = (a as u64 * button_a.cost as u64) + (b as u64 * button_b.cost as u64);
+            cost
         })
+        .sum()
 }
 
-fn parse_input(input: &str, target_adjustment: usize) -> Vec<Arcade> {
+fn parse_input(input: &str, target_adjustment: u64) -> Vec<Arcade> {
     let mut arcades: Vec<Arcade> = vec![];
     let mut buffer: Arcade = (
         Button {
@@ -124,8 +126,8 @@ fn parse_input(input: &str, target_adjustment: usize) -> Vec<Arcade> {
 
         if let Some(captures) = button_regex.captures(line) {
             let button_type = &captures[1];
-            let x = captures[2].parse::<usize>().unwrap();
-            let y = captures[3].parse::<usize>().unwrap();
+            let x = captures[2].parse::<u64>().unwrap();
+            let y = captures[3].parse::<u64>().unwrap();
 
             if button_type == "A" {
                 buffer.0 = Button { x, y, cost: 3 };
@@ -135,8 +137,8 @@ fn parse_input(input: &str, target_adjustment: usize) -> Vec<Arcade> {
         }
 
         if let Some(captures) = prize_regex.captures(line) {
-            let x = captures[1].parse::<usize>().unwrap() + target_adjustment;
-            let y = captures[2].parse::<usize>().unwrap() + target_adjustment;
+            let x = captures[1].parse::<u64>().unwrap() + target_adjustment;
+            let y = captures[2].parse::<u64>().unwrap() + target_adjustment;
             buffer.2 = Target { x, y };
         }
     }
