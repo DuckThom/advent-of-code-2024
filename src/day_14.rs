@@ -21,6 +21,7 @@ fn part2(input: &str, rows: i32, cols: i32) -> usize {
         move_robots(&mut robots, 1, rows, cols);
 
         if could_be_a_tree(&robots) {
+            // print_tree(&robots, rows, cols, seconds);
             return seconds;
         }
 
