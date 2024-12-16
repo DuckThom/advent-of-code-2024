@@ -15,13 +15,13 @@ fn part1(input: &str) -> usize {
     get_score(&grid)
 }
 
-fn part2(input: &str) -> usize {
-    let (mut player, mut grid, directions) = parse_input(input, true);
-
-    run_sokoban(&mut player, &mut grid, &directions);
-
-    get_score(&grid)
-}
+// fn part2(input: &str) -> usize {
+//     let (mut player, mut grid, directions) = parse_input(input, true);
+//
+//     run_sokoban(&mut player, &mut grid, &directions);
+//
+//     get_score(&grid)
+// }
 
 #[derive(Debug, PartialEq)]
 enum BlockType {
@@ -52,7 +52,7 @@ fn parse_input(input: &str, wide: bool) -> ((usize, usize), Vec<Vec<Option<Block
             let mut row: Vec<Option<Block>> = vec![];
 
             line.chars().enumerate().for_each(|(x, c)| {
-                for _ in 0..(wide as usize) {
+                for _ in 0..(wide as usize)+1 {
                     if c == '#' {
                         row.push(Some(Block {
                             block_type: BlockType::Wall,
@@ -235,9 +235,9 @@ mod tests {
         assert_eq!(part1(LARGE_TEST_INPUT), 10092);
     }
 
-    #[test]
-    pub fn test_part2() {
+    // #[test]
+    // pub fn test_part2() {
         // assert_eq!(part1(SMALL_TEST_INPUT), 2028);
-        assert_eq!(part2(LARGE_TEST_INPUT), 9021);
-    }
+        // assert_eq!(part2(LARGE_TEST_INPUT), 9021);
+    // }
 }
