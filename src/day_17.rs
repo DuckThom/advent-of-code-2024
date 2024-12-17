@@ -22,15 +22,22 @@ fn part2(input: &str) -> usize {
     let find_candidate_bits = |reg_a: usize, output: usize| -> Vec<usize> {
         let mut candidates: Vec<usize> = vec![];
 
+        // Iterate over all possible 3-bit combinations (from `0b000` up to and including `0b111`).
         for bits in 0b000usize..=0b111usize {
+            // Construct a candidate value by shifting the value of `reg_a` left by 3 bits
+            // and appending the current 3-bit combination (`bits`).
             let candidate = (reg_a << 3) | bits;
 
+            // Run the program with a modified set of registers:
+            // Replace register A with the candidate value.
             let result = run_program(
                 &instructions,
                 &[candidate, registers[1], registers[2], registers[3]],
                 10000,
             );
 
+            // If the program executes successfully and the first output matches the desired `output`,
+            // consider this candidate value as valid.
             if result.is_ok() && output == *result.unwrap().first().unwrap() {
                 candidates.push(candidate);
             }
@@ -39,18 +46,23 @@ fn part2(input: &str) -> usize {
         candidates
     };
 
+    // Process the instructions list in reverse order.
+    // Start with a single candidate value (`0`) and use the instructions to iteratively
+    // refine the list of valid candidate values.
     instructions
         .iter()
         .rev()
         .fold(vec![0_usize], |candidates, instruction| {
+            // For each existing candidate, find new candidates by determining the possible register states
+            // required to produce the current instruction as output.
             candidates
                 .into_iter()
                 .flat_map(|candidate| find_candidate_bits(candidate, *instruction))
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>() // Collect all the new candidates into a single vector.
         })
         .into_iter()
-        .min()
-        .unwrap()
+        .min()// Out of all remaining candidates, select the smallest one.
+        .unwrap() // Unwrap the result since we know at least one candidate exists.
 }
 
 fn run_program(
