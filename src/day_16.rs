@@ -42,7 +42,6 @@ fn part2(input: &str) -> usize {
 
     let mut visited_tiles: HashSet<Pos> = path.iter().map(|p| p.0).collect();
 
-    let mut last_position = path[0];
     for i in 1..path.len() - 1 {
         let position = path[i];
         let next_position = path[i + 1];
@@ -73,8 +72,6 @@ fn part2(input: &str) -> usize {
                 }
             }
         }
-
-        last_position = position;
     }
 
     print_maze_all(&maze, &start, &end, &visited_tiles);
