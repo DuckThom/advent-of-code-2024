@@ -1,47 +1,204 @@
-pub fn execute(input: &str) {
-    println!("Part 1: {}", part1(&input));
-    // println!("Part 2: {}", part2(&input));
-}
+use std::collections::HashSet;
 
 use crossterm::{cursor::Hide, cursor::MoveTo, QueueableCommand};
 use std::io::{stdout, Write};
 use std::thread::sleep;
 
+pub fn execute(input: &str) {
+    // println!("Part 1: {}", part1(&input));
+    println!("Part 2: {}", part2(&input));
+}
+
 fn part1(input: &str) -> usize {
-    let (mut player, mut grid, directions) = parse_input(input, false);
+    let mut sokoban = parse_input(input, false);
 
-    run_sokoban(&mut player, &mut grid, &directions);
-
-    get_score(&grid)
+    sokoban.run()
 }
 
-// fn part2(input: &str) -> usize {
-//     let (mut player, mut grid, directions) = parse_input(input, true);
-//
-//     run_sokoban(&mut player, &mut grid, &directions);
-//
-//     get_score(&grid)
-// }
+fn part2(input: &str) -> usize {
+    let mut sokoban = parse_input(input, true);
 
-#[derive(Debug, PartialEq)]
-enum BlockType {
-    Wall,
-    Box,
-    Player,
+    sokoban.run()
 }
 
-#[derive(Debug)]
-struct Block {
-    block_type: BlockType,
+type Direction = (isize, isize);
+type Position = (usize, usize);
+
+#[derive(Clone, PartialEq)]
+struct MovableTile {
+    locations: Vec<Position>,
 }
 
-fn parse_input(input: &str, wide: bool) -> ((usize, usize), Vec<Vec<Option<Block>>>, Vec<(isize, isize)>) {
-    let mut player: Option<(usize, usize)> = None;
-    let mut grid: Vec<Vec<Option<Block>>> = vec![];
-    let mut directions: Vec<(isize, isize)> = vec![];
+impl MovableTile {
+    fn can_move(&self, walls: &Vec<Position>, direction: &Direction) -> bool {
+        self.locations.iter().all(|location| {
+            let next = (
+                location.0.overflowing_add_signed(direction.0).0,
+                location.1.overflowing_add_signed(direction.1).0,
+            );
+
+            !walls.contains(&next)
+        })
+    }
+
+    fn move_to(&mut self, direction: &Direction) {
+        self.locations = self
+            .locations
+            .iter()
+            .map(|(x, y)| {
+                (
+                    x.overflowing_add_signed(direction.0).0,
+                    y.overflowing_add_signed(direction.1).0,
+                )
+            })
+            .collect();
+    }
+}
+
+struct Sokoban {
+    player: MovableTile,
+    boxes: Vec<MovableTile>,
+    walls: Vec<Position>,
+    directions: Vec<Direction>,
+}
+
+impl Sokoban {
+    fn run(&mut self) -> usize {
+        for direction in self.directions.clone() {
+            self.step(&direction);
+            // self.render();
+        }
+        self.render();
+        self.get_score()
+    }
+
+    fn get_score(&self) -> usize {
+        self.boxes.iter().fold(0, |acc, tile| {
+            let (x, y) = tile.locations.first().unwrap();
+
+            acc + ((*y * 100) + *x)
+        })
+    }
+
+    fn step(&mut self, direction: &Direction) {
+        let mut new_boxes = self.boxes.clone();
+        let mut new_player = self.player.clone();
+
+        let mut blocks_to_process: Vec<MovableTile> = vec![self.player.clone()];
+        let mut abort = false;
+
+        'outer: while !blocks_to_process.is_empty() && !abort {
+            let tile = blocks_to_process.pop().unwrap();
+
+            if tile.can_move(&self.walls, direction) {
+                if tile == self.player {
+                    new_player.move_to(&direction);
+                } else {
+                    let index = self.boxes.iter().position(|t| t == &tile).unwrap();
+
+                    new_boxes[index].move_to(&direction);
+                }
+
+                let locations = tile.locations.clone();
+                for location in tile.locations {
+                    let next = (
+                        location.0.overflowing_add_signed(direction.0).0,
+                        location.1.overflowing_add_signed(direction.1).0,
+                    );
+
+                    if self.walls.contains(&next) {
+                        abort = true;
+                        break 'outer;
+                    }
+
+                    let matching_boxes: HashSet<usize> =
+                        self.boxes
+                            .iter()
+                            .enumerate()
+                            .fold(HashSet::new(), |mut acc, (index, t)| {
+                                if t.locations.contains(&next) && !locations.contains(&next) {
+                                    acc.insert(index);
+                                }
+
+                                acc
+                            });
+
+                    for i in matching_boxes {
+                        if !blocks_to_process.contains(&self.boxes[i]) {
+                            blocks_to_process.push(self.boxes[i].clone())
+                        }
+                    }
+                }
+            } else {
+                blocks_to_process.clear();
+
+                abort = true;
+            }
+        }
+
+        if !abort {
+            self.boxes = new_boxes;
+            self.player = new_player;
+        }
+    }
+
+    #[allow(dead_code)]
+    fn render(&self) {
+        let mut out = stdout();
+
+        out.queue(crossterm::terminal::Clear(
+            crossterm::terminal::ClearType::All,
+        ))
+        .unwrap();
+        out.queue(Hide).unwrap();
+        out.queue(MoveTo(0, 0)).unwrap();
+
+        for y in 0..=self
+            .walls
+            .iter()
+            .max_by(|(_, ay), (_, by)| ay.cmp(by))
+            .unwrap()
+            .1
+        {
+            for x in 0..=*self
+                .walls
+                .iter()
+                .map(|(x, _)| x)
+                .max()
+                .unwrap()
+            {
+                if self.walls.contains(&(x, y)) {
+                    out.write(b"#").unwrap();
+                } else if self.player.locations.contains(&(x, y)) {
+                    out.write(b"@").unwrap();
+                } else if self
+                    .boxes
+                    .iter()
+                    .any(|tile| tile.locations.contains(&(x, y)))
+                {
+                    out.write("█".as_bytes()).unwrap();
+                } else {
+                    out.write(b" ").unwrap();
+                }
+            }
+
+            out.write("\n".as_bytes()).unwrap();
+        }
+
+        out.flush().unwrap();
+    }
+}
+
+fn parse_input(input: &str, wide: bool) -> Sokoban {
+    let mut player: MovableTile = MovableTile { locations: vec![] };
+    let mut boxes: Vec<MovableTile> = vec![];
+    let mut walls: Vec<Position> = vec![];
+    let mut directions: Vec<Direction> = vec![];
     let mut parse_type = 0;
 
     input.lines().enumerate().for_each(|(y, line)| {
+        let mut x = 0;
+
         if line.is_empty() {
             parse_type = 1;
 
@@ -49,33 +206,37 @@ fn parse_input(input: &str, wide: bool) -> ((usize, usize), Vec<Vec<Option<Block
         }
 
         if parse_type == 0 {
-            let mut row: Vec<Option<Block>> = vec![];
+            line.chars().for_each(|c| {
+                if c == '.' {
+                    x += if wide { 2 } else { 1 };
 
-            line.chars().enumerate().for_each(|(x, c)| {
-                for _ in 0..(wide as usize)+1 {
-                    if c == '#' {
-                        row.push(Some(Block {
-                            block_type: BlockType::Wall,
-                        }));
-                    } else if c == '.' {
-                        row.push(None);
-                    } else if c == 'O' {
-                        row.push(Some(Block {
-                            block_type: BlockType::Box,
-                        }));
-                    } else if c == '@' {
-                        row.push(Some(Block {
-                            block_type: BlockType::Player,
-                        }));
+                    return;
+                }
 
-                        if player.is_none() {
-                            player = Some((x, y));
-                        }
+                if c == '#' {
+                    walls.push((x, y));
+                    x += 1;
+
+                    if wide {
+                        walls.push((x, y));
+                        x += 1;
                     }
+                } else if c == 'O' {
+                    let mut locations = vec![(x, y)];
+                    x += 1;
+                    if wide {
+                        locations.push((x, y));
+                        x += 1;
+                    }
+
+                    boxes.push(MovableTile { locations });
+                } else if c == '@' {
+                    let locations = vec![(x, y)];
+                    x += 2;
+
+                    player = MovableTile { locations }
                 }
             });
-
-            grid.push(row);
 
             return;
         }
@@ -95,131 +256,12 @@ fn parse_input(input: &str, wide: bool) -> ((usize, usize), Vec<Vec<Option<Block
         }
     });
 
-    (player.unwrap(), grid, directions)
-}
-
-fn run_sokoban(
-    player: &mut (usize, usize),
-    grid: &mut Vec<Vec<Option<Block>>>,
-    directions: &Vec<(isize, isize)>,
-) {
-    for direction in directions {
-        step(player, grid, direction);
-
-        // print_grid(grid, direction);
+    Sokoban {
+        player,
+        boxes,
+        walls,
+        directions,
     }
-}
-
-#[allow(dead_code)]
-fn print_grid(grid: &Vec<Vec<Option<Block>>>, direction: &(isize, isize)) {
-    let mut out = stdout();
-
-    out.queue(crossterm::terminal::Clear(
-        crossterm::terminal::ClearType::All,
-    ))
-    .unwrap();
-    out.queue(Hide).unwrap();
-    out.queue(MoveTo(0, 0)).unwrap();
-
-    grid.iter().for_each(|row| {
-        row.iter().for_each(|block| {
-            if block.is_none() {
-                out.write(" ".as_bytes()).unwrap();
-            } else {
-                let b = block.as_ref().unwrap();
-
-                if b.block_type == BlockType::Box {
-                    out.write("█".as_bytes()).unwrap();
-                } else if b.block_type == BlockType::Player {
-                    out.write("@".as_bytes()).unwrap();
-                } else if b.block_type == BlockType::Wall {
-                    out.write("#".as_bytes()).unwrap();
-                }
-            }
-        });
-
-        out.write("\n".as_bytes()).unwrap();
-    });
-
-    out.write("\n".as_bytes()).unwrap();
-
-    if direction == &(0, -1) {
-        out.write("v".as_bytes()).unwrap();
-    } else if direction == &(0, 1) {
-        out.write("^".as_bytes()).unwrap();
-    } else if direction == &(-1, 0) {
-        out.write("<".as_bytes()).unwrap();
-    } else if direction == &(1, 0) {
-        out.write(">".as_bytes()).unwrap();
-    }
-
-    out.write("\n".as_bytes()).unwrap();
-
-    out.flush().unwrap();
-    sleep(std::time::Duration::from_millis(10));
-}
-
-fn step(
-    player: &mut (usize, usize),
-    grid: &mut Vec<Vec<Option<Block>>>,
-    direction: &(isize, isize),
-) {
-    let mut blocks_to_move: Vec<(usize, usize)> = vec![player.clone()];
-    let mut pointer: (usize, usize) = (player.0, player.1);
-
-    loop {
-        let next = (
-            pointer.0.overflowing_add_signed(direction.0).0,
-            pointer.1.overflowing_add_signed(direction.1).0,
-        );
-
-        let next_block = grid[next.1][next.0].as_ref();
-
-        if next_block.is_none() {
-            blocks_to_move.push(next);
-
-            break;
-        }
-
-        if next_block.unwrap().block_type == BlockType::Wall {
-            blocks_to_move.clear();
-
-            break;
-        } else if next_block.unwrap().block_type == BlockType::Box {
-            blocks_to_move.push(next);
-
-            pointer = next;
-        }
-    }
-
-    if !blocks_to_move.is_empty() {
-        for i in (1..blocks_to_move.len()).rev() {
-            swap(grid, &blocks_to_move[i], &blocks_to_move[i - 1]);
-        }
-
-        player.0 = player.0.overflowing_add_signed(direction.0).0;
-        player.1 = player.1.overflowing_add_signed(direction.1).0;
-    }
-}
-
-fn swap(grid: &mut Vec<Vec<Option<Block>>>, a: &(usize, usize), b: &(usize, usize)) {
-    let temp = grid[a.1][a.0].take();
-    grid[a.1][a.0] = grid[b.1][b.0].take();
-    grid[b.1][b.0] = temp;
-}
-
-fn get_score(grid: &Vec<Vec<Option<Block>>>) -> usize {
-    let mut score: usize = 0;
-
-    grid.iter().enumerate().for_each(|(y, row)| {
-        row.iter().enumerate().for_each(|(x, block)| {
-            if block.is_some() && block.as_ref().unwrap().block_type == BlockType::Box {
-                score += (y * 100) + x;
-            }
-        })
-    });
-
-    score
 }
 
 #[cfg(test)]
@@ -235,9 +277,8 @@ mod tests {
         assert_eq!(part1(LARGE_TEST_INPUT), 10092);
     }
 
-    // #[test]
-    // pub fn test_part2() {
-        // assert_eq!(part1(SMALL_TEST_INPUT), 2028);
-        // assert_eq!(part2(LARGE_TEST_INPUT), 9021);
-    // }
+    #[test]
+    pub fn test_part2() {
+        assert_eq!(part2(LARGE_TEST_INPUT), 9021);
+    }
 }
