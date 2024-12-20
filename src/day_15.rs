@@ -283,13 +283,13 @@ mod tests {
 
     #[test]
     pub fn test_part1() {
-        // assert_eq!(part1(SMALL_TEST_INPUT), 2028);
+        assert_eq!(part1(SMALL_TEST_INPUT), 2028);
         assert_eq!(part1(LARGE_TEST_INPUT), 10092);
     }
 
     #[test]
     pub fn test_part2() {
         assert_eq!(part2(ANOTHER_TEST_INPUT), 11042);
-        // assert_eq!(part2(LARGE_TEST_INPUT), 9021);
+        assert_eq!(part2(LARGE_TEST_INPUT), 9021);
     }
 }
