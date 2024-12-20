@@ -1,3 +1,4 @@
+use colored::Colorize;
 use pathfinding::prelude::dijkstra;
 use std::collections::{HashMap, HashSet};
 
@@ -10,8 +11,6 @@ type Maze = Vec<Vec<bool>>;
 
 fn run(input: &str, required_time_save: usize, skippable: usize) -> usize {
     let (start, end, mut maze) = parse_input(input);
-
-    block_dead_ends(&mut maze, &start, &end);
 
     let cheats: HashMap<usize, usize> = cheat_the_maze(&mut maze, &start, &end, skippable);
 
@@ -29,45 +28,31 @@ fn count_cheats(cheats: &HashMap<usize, usize>, required_time_save: &usize) -> u
 }
 
 fn cheat_the_maze(maze: &Maze, start: &Pos, end: &Pos, skippable: usize) -> HashMap<usize, usize> {
-    let (true_path, score) = do_the_dijkstra_thing(&maze, &start, &end).unwrap();
+    let (true_path, _) = dijkstra(start, |p| p.successors(&maze), |p| p == end).unwrap();
 
     let mut cheats: HashMap<usize, usize> = HashMap::new();
     let mut visited: HashSet<Pos> = HashSet::new();
 
-    true_path.iter().for_each(|p| {
+    true_path.iter().enumerate().for_each(|(index, p)| {
         visited.insert(*p);
 
         let jumpable_targets = p.can_jump_to(&true_path, &skippable);
 
-        for target in jumpable_targets {
+        for (target, distance) in jumpable_targets {
             if !visited.contains(&target) {
                 let start_index = true_path.iter().position(|p| p == &target).unwrap();
-                let cheated_path = true_path[start_index..].to_vec();
 
-                let cs = visited.len() + cheated_path.len();
-                if cs < score {
-                    cheats.entry(score - cs).or_insert(0);
-                    cheats.entry(score - cs).and_modify(|count| {
-                        *count += 1;
-                    });
-                }
+                let saved = start_index - index - distance;
+
+                cheats.entry(saved).or_insert(0);
+                cheats.entry(saved).and_modify(|count| {
+                    *count += 1;
+                });
             }
         }
     });
 
     cheats
-}
-
-fn do_the_dijkstra_thing(
-    maze: &Maze,
-    start: &Pos,
-    end: &Pos,
-) -> Option<(Vec<Pos>, usize)> {
-    dijkstra(
-        start,
-        |p| p.successors(&maze),
-        |p| p == end,
-    )
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -97,35 +82,29 @@ impl Pos {
         next.into_iter().map(|p| (p, 1)).collect()
     }
 
-    fn can_jump_to(&self, path: &Vec<Pos>, skippable: &usize) -> HashSet<Pos> {
+    fn can_jump_to(&self, path: &Vec<Pos>, skippable: &usize) -> HashSet<(Pos, usize)> {
         let &Pos(x, y) = self;
 
-        let mut jumpable_positions: HashSet<Pos> = HashSet::new();
+        let mut jumpable_positions: HashSet<(Pos, usize)> = HashSet::new();
+        let current_index = path.iter().position(|p| p == self).unwrap();
 
-        for dy in 0..=*skippable {
-            let dx = *skippable - dy;
+        for pos in path[current_index..].iter() {
+            let dx = x.abs_diff(pos.0);
+            let dy = y.abs_diff(pos.1);
 
-            let candidates = vec![
-                (x.wrapping_sub(dx), y.wrapping_sub(dy)), // Top-left
-                (x + dx, y.wrapping_sub(dy)),             // Top-right
-                (x.wrapping_sub(dx), y + dy),             // Bottom-left
-                (x + dx, y + dy),                         // Bottom-right
-            ];
+            let distance = dx + dy;
+            if pos == &path[current_index + distance] {
+                continue;
+            }
 
-            for (nx, ny) in candidates {
-                let new_pos = Pos(nx, ny);
-
-                if path.contains(&new_pos) {
-                    jumpable_positions.insert(new_pos);
-                }
+            if distance <= *skippable {
+                jumpable_positions.insert((*pos, distance));
             }
         }
 
         jumpable_positions
     }
 }
-
-use colored::Colorize;
 
 #[allow(dead_code)]
 fn print_maze(maze: &Maze, start: &Pos, end: &Pos, path: &Vec<Pos>, jumpable_positions: &Vec<Pos>) {
@@ -145,67 +124,17 @@ fn print_maze(maze: &Maze, start: &Pos, end: &Pos, path: &Vec<Pos>, jumpable_pos
                 }
             }
 
-            print!("{}", if jumpable_positions.contains(&Pos(x, y)) {
-                Colorize::red("J")
-            } else {
-                Colorize::white(char_to_print)
-            });
+            print!(
+                "{}",
+                if jumpable_positions.contains(&Pos(x, y)) {
+                    Colorize::red("J")
+                } else {
+                    Colorize::white(char_to_print)
+                }
+            );
         }
         print!("\n");
     }
-}
-
-fn block_dead_ends(maze: &mut Maze, start: &Pos, end: &Pos) {
-    let mut has_changes = true;
-    let rows = maze.len();
-
-    while has_changes {
-        has_changes = false;
-
-        // Iterate over the maze explicitly using `for` loops
-        for y in 0..rows {
-            if y == 0 || y == rows - 1 {
-                continue;
-            }
-
-            let cols = maze[y].len(); // Number of columns in the current row
-            for x in 0..cols {
-                let cell = &maze[y][x];
-
-                if !*cell || *start == Pos(x, y) || *end == Pos(x, y) {
-                    continue; // Skip cells that are walls, start, or end
-                }
-
-                // Count paths on the fly, directly using the updated maze
-                if count_paths(maze, (x, y)) == 1 {
-                    maze[y][x] = false; // Update the maze immediately
-                    has_changes = true;
-                }
-            }
-        }
-    }
-}
-
-fn count_paths(maze: &Maze, (x, y): (usize, usize)) -> usize {
-    let mut paths: usize = 0;
-
-    if maze[y - 1][x] {
-        paths += 1;
-    }
-
-    if maze[y + 1][x] {
-        paths += 1;
-    }
-
-    if maze[y][x - 1] {
-        paths += 1;
-    }
-
-    if maze[y][x + 1] {
-        paths += 1;
-    }
-
-    paths
 }
 
 fn parse_input(input: &str) -> (Pos, Pos, Maze) {
