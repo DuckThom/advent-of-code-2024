@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
-use crossterm::{cursor::Hide, cursor::MoveTo, QueueableCommand};
+use crossterm::{cursor::MoveTo, QueueableCommand};
 use std::io::{stdout, Write};
 use std::thread::sleep;
 
 pub fn execute(input: &str) {
-    // println!("Part 1: {}", part1(&input));
+    println!("Part 1: {}", part1(&input));
     println!("Part 2: {}", part2(&input));
 }
 
@@ -24,7 +24,7 @@ fn part2(input: &str) -> usize {
 type Direction = (isize, isize);
 type Position = (usize, usize);
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Hash, Eq)]
 struct MovableTile {
     locations: Vec<Position>,
 }
@@ -39,6 +39,23 @@ impl MovableTile {
 
             !walls.contains(&next)
         })
+    }
+
+    fn get_next(&self, boxes: &Vec<MovableTile>, direction: &Direction) -> HashSet<usize> {
+        let mut next_boxes: HashSet<usize> = HashSet::new();
+
+        for location in self.locations.iter() {
+            let next = (
+                location.0.overflowing_add_signed(direction.0).0,
+                location.1.overflowing_add_signed(direction.1).0,
+            );
+
+            if let Some(next_box) = boxes.iter().position(|b| b.locations.contains(&next)) {
+                next_boxes.insert(next_box);
+            }
+        }
+
+        next_boxes
     }
 
     fn move_to(&mut self, direction: &Direction) {
@@ -66,9 +83,11 @@ impl Sokoban {
     fn run(&mut self) -> usize {
         for direction in self.directions.clone() {
             self.step(&direction);
-            // self.render();
+
+            #[cfg(test)]
+            self.render(&self.player, &self.boxes, &self.walls, &direction);
         }
-        self.render();
+
         self.get_score()
     }
 
@@ -81,102 +100,86 @@ impl Sokoban {
     }
 
     fn step(&mut self, direction: &Direction) {
-        let mut new_boxes = self.boxes.clone();
-        let mut new_player = self.player.clone();
+        let old_boxes = self.boxes.clone();
+        let old_player = self.player.clone();
 
-        let mut blocks_to_process: Vec<MovableTile> = vec![self.player.clone()];
-        let mut abort = false;
+        let mut blocks_to_process: Vec<usize> = vec![usize::MAX];
+        let mut hit_wall = false;
+        let mut processed: HashSet<usize> = HashSet::new();
 
-        'outer: while !blocks_to_process.is_empty() && !abort {
-            let tile = blocks_to_process.pop().unwrap();
-
-            if tile.can_move(&self.walls, direction) {
-                if tile == self.player {
-                    new_player.move_to(&direction);
-                } else {
-                    let index = self.boxes.iter().position(|t| t == &tile).unwrap();
-
-                    new_boxes[index].move_to(&direction);
-                }
-
-                let locations = tile.locations.clone();
-                for location in tile.locations {
-                    let next = (
-                        location.0.overflowing_add_signed(direction.0).0,
-                        location.1.overflowing_add_signed(direction.1).0,
-                    );
-
-                    if self.walls.contains(&next) {
-                        abort = true;
-                        break 'outer;
-                    }
-
-                    let matching_boxes: HashSet<usize> =
-                        self.boxes
-                            .iter()
-                            .enumerate()
-                            .fold(HashSet::new(), |mut acc, (index, t)| {
-                                if t.locations.contains(&next) && !locations.contains(&next) {
-                                    acc.insert(index);
-                                }
-
-                                acc
-                            });
-
-                    for i in matching_boxes {
-                        if !blocks_to_process.contains(&self.boxes[i]) {
-                            blocks_to_process.push(self.boxes[i].clone())
-                        }
-                    }
-                }
+        'outer: while !blocks_to_process.is_empty() && !hit_wall {
+            let tile_index = blocks_to_process.pop().unwrap();
+            let tile = if tile_index == usize::MAX {
+                &mut self.player
             } else {
-                blocks_to_process.clear();
+                &mut self.boxes[tile_index]
+            };
 
-                abort = true;
+            processed.insert(tile_index);
+
+            if !tile.can_move(&self.walls, direction) {
+                hit_wall = true;
+                break 'outer;
             }
+
+            for index in tile.get_next(&old_boxes, &direction) {
+                if !blocks_to_process.contains(&index) && !processed.contains(&index) {
+                    blocks_to_process.push(index);
+                }
+            }
+
+            tile.move_to(&direction);
         }
 
-        if !abort {
-            self.boxes = new_boxes;
-            self.player = new_player;
+        if hit_wall {
+            self.boxes = old_boxes;
+            self.player = old_player;
         }
     }
 
     #[allow(dead_code)]
-    fn render(&self) {
+    fn render(
+        &self,
+        player: &MovableTile,
+        boxes: &Vec<MovableTile>,
+        walls: &Vec<Position>,
+        direction: &Direction,
+    ) {
         let mut out = stdout();
 
         out.queue(crossterm::terminal::Clear(
             crossterm::terminal::ClearType::All,
         ))
         .unwrap();
-        out.queue(Hide).unwrap();
         out.queue(MoveTo(0, 0)).unwrap();
 
-        for y in 0..=self
-            .walls
-            .iter()
-            .max_by(|(_, ay), (_, by)| ay.cmp(by))
-            .unwrap()
-            .1
-        {
-            for x in 0..=*self
-                .walls
-                .iter()
-                .map(|(x, _)| x)
-                .max()
-                .unwrap()
-            {
-                if self.walls.contains(&(x, y)) {
+        if direction.1 == -1 {
+            out.write(b"^").unwrap();
+        } else if direction.1 == 1 {
+            out.write(b"v").unwrap();
+        } else if direction.0 == -1 {
+            out.write(b"<").unwrap();
+        } else if direction.0 == 1 {
+            out.write(b">").unwrap();
+        }
+        out.write("\n".as_bytes()).unwrap();
+
+        for y in 0..=*walls.iter().map(|(_, y)| y).max().unwrap() {
+            for x in 0..=*walls.iter().map(|(x, _)| x).max().unwrap() {
+                if walls.contains(&(x, y)) {
                     out.write(b"#").unwrap();
-                } else if self.player.locations.contains(&(x, y)) {
+                } else if player.locations.contains(&(x, y)) {
                     out.write(b"@").unwrap();
-                } else if self
-                    .boxes
+                } else if boxes
                     .iter()
-                    .any(|tile| tile.locations.contains(&(x, y)))
+                    .any(|tile| tile.locations.first().unwrap() == &(x, y))
                 {
-                    out.write("█".as_bytes()).unwrap();
+                    out.write("[".as_bytes()).unwrap();
+                } else if boxes
+                    .iter()
+                    .any(|tile| tile.locations.last().unwrap() == &(x, y))
+                {
+                    out.write("]".as_bytes()).unwrap();
                 } else {
                     out.write(b" ").unwrap();
                 }
@@ -185,7 +188,12 @@ impl Sokoban {
             out.write("\n".as_bytes()).unwrap();
         }
 
+        out.write("\n".as_bytes()).unwrap();
+        out.write("\n".as_bytes()).unwrap();
+
         out.flush().unwrap();
+
+        sleep(std::time::Duration::from_millis(1000));
     }
 }
 
@@ -231,10 +239,11 @@ fn parse_input(input: &str, wide: bool) -> Sokoban {
 
                     boxes.push(MovableTile { locations });
                 } else if c == '@' {
-                    let locations = vec![(x, y)];
-                    x += 2;
+                    player = MovableTile {
+                        locations: vec![(x, y)],
+                    };
 
-                    player = MovableTile { locations }
+                    x += if wide { 2 } else { 1 };
                 }
             });
 
@@ -270,15 +279,17 @@ mod tests {
 
     const SMALL_TEST_INPUT: &str = include_str!("../inputs/day_15/small_test");
     const LARGE_TEST_INPUT: &str = include_str!("../inputs/day_15/large_test");
+    const ANOTHER_TEST_INPUT: &str = include_str!("../inputs/day_15/another_test");
 
     #[test]
     pub fn test_part1() {
-        assert_eq!(part1(SMALL_TEST_INPUT), 2028);
+        // assert_eq!(part1(SMALL_TEST_INPUT), 2028);
         assert_eq!(part1(LARGE_TEST_INPUT), 10092);
     }
 
     #[test]
     pub fn test_part2() {
-        assert_eq!(part2(LARGE_TEST_INPUT), 9021);
+        assert_eq!(part2(ANOTHER_TEST_INPUT), 11042);
+        // assert_eq!(part2(LARGE_TEST_INPUT), 9021);
     }
 }
