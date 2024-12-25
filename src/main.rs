@@ -18,6 +18,7 @@ mod day_2;
 mod day_20;
 mod day_22;
 mod day_23;
+mod day_24;
 mod day_25;
 mod day_3;
 mod day_4;
@@ -52,7 +53,7 @@ const DAYS: [fn(&str); 25] = [
     |_: &str| {},
     day_22::execute,
     |_: &str| {},
-    |_: &str| {},
+    day_24::execute,
     day_25::execute,
 ];
 

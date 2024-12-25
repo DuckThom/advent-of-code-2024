@@ -89,7 +89,6 @@ mod tests {
     use super::*;
 
     const TEST_INPUT: &str = include_str!("../inputs/day_25/test");
-    // const P2_TEST_INPUT: &str = include_str!("../inputs/day_22/p2_test");
 
     #[test]
     pub fn test_part1() {
